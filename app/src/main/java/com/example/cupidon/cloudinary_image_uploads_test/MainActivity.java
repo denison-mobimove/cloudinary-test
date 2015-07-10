@@ -1,11 +1,15 @@
 package com.example.cupidon.cloudinary_image_uploads_test;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Resources;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.Menu;
@@ -15,8 +19,10 @@ import android.widget.ImageView;
 
 import com.cloudinary.Cloudinary;
 
-import java.io.File;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,6 +35,7 @@ public class MainActivity extends ActionBarActivity {
     static Bitmap yourSelectedImage;
     static InputStream imageStream;
     static Uri selectedImage;
+    static String imagePath;
 
     private final static String MY_URL = "cloudinary://572176942673258:EBwYIz2pGosoqQC7qmgw6jyvt-0@claudy";
 
@@ -75,7 +82,6 @@ public class MainActivity extends ActionBarActivity {
     public void uploadImage(View view) {
         //configure cloudinary secure url
 
-        String img = android.os.Environment.getExternalStorageDirectory().getAbsolutePath()+"/flower1.jpeg";
 
         Map config = new HashMap();
         config.put("cloud_name", cloudName);
@@ -84,18 +90,57 @@ public class MainActivity extends ActionBarActivity {
         //cloudinary = new Cloudinary(config);
         cloudinary = new Cloudinary(MY_URL);
 
-        File f = new File(img);
-        if(f.exists()){
-            Log.i("file","url: "+img);
-        }
+        //test
 
-        try {
-            cloudinary.uploader().upload(yourSelectedImage, Cloudinary.asMap("public_id","my_test_image"));
-            String url = cloudinary.url().generate();
-            Log.i("cloudinary", "url: " + url);
-        } catch (Exception e) {
-            Log.e("cloudinary_error", "loading image", e);
-        }
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        yourSelectedImage.compress(Bitmap.CompressFormat.PNG, 0 /*ignored for PNG*/, bos);
+        byte[] bitmapdata = bos.toByteArray();
+        final ByteArrayInputStream bs = new ByteArrayInputStream(bitmapdata);
+        //End test
+
+//        File f = new File(imagePath);
+//        if(f.exists()){
+//            Log.i("file","url: "+img);
+//        }
+
+        Runnable runnable = new Runnable() {
+            @Override
+            public void run() {
+                try {
+
+                    final String filename = "image_" + new Date();
+                    cloudinary.uploader().upload(bs, Cloudinary.asMap("public_id", filename));
+
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            String url = cloudinary.url().generate(filename);
+                            if (url != null) {
+                                AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(
+                                        getApplicationContext());
+                                alertDialogBuilder.setTitle("Image Upload");
+
+                                alertDialogBuilder
+                                        .setMessage("Picture Uploaded! \n"+url)
+                                        .setCancelable(false).setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialogInterface, int i) {
+                                        startActivity(new Intent(getApplicationContext(), MainActivity.class));
+                                    }
+                                }).show();
+                            }
+                        }
+                    });
+                    //Log.i("cloudinary", "url: " + url);
+                } catch (Exception e) {
+                    Log.e("cloudinary_error", "loading image", e);
+                }
+
+            }
+        };
+
+
+        new Thread(runnable).start();
 
 
     }
@@ -113,8 +158,17 @@ public class MainActivity extends ActionBarActivity {
                         imageStream = getContentResolver().openInputStream(selectedImage);
                         yourSelectedImage = BitmapFactory.decodeStream(imageStream);
 
-                        Log.i("image uri", "uri: " + selectedImage.toString());
+                        Log.i("image uri", "uri: " + selectedImage.getPath());
                         ((ImageView) findViewById(R.id.uploaded_image)).setImageBitmap(yourSelectedImage);
+
+                        String[] filePathColumn = {MediaStore.Images.Media.DATA};
+
+                        Cursor cursor = getContentResolver().query(
+                                selectedImage, filePathColumn, null, null, null);
+                        cursor.moveToFirst();
+                        int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
+                        imagePath = cursor.getString(columnIndex);
+                        cursor.close();
 
                     } catch (Exception e) {
 
