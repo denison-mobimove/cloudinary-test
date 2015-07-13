@@ -9,5 +9,6 @@
     <string name="cloudinary_api_key">572176942673258</string>
     <string name="cloudinary_api_secret">EBwYIz2pGosoqQC7qmgw6jyvt-0</string>
     <string name="CLOUDINARY_URL">cloudinary://572176942673258:EBwYIz2pGosoqQC7qmgw6jyvt-0@claudy-0</string>
+    <string name="action_all_image">View Images</string>
 
 </resources>

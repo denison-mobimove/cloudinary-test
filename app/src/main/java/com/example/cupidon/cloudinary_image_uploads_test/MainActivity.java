@@ -1,5 +1,6 @@
 package com.example.cupidon.cloudinary_image_uploads_test;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -15,7 +16,10 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
+import android.widget.ScrollView;
 
 import com.cloudinary.Cloudinary;
 
@@ -36,6 +40,10 @@ public class MainActivity extends ActionBarActivity {
     static InputStream imageStream;
     static Uri selectedImage;
     static String imagePath;
+    private static Activity activity;
+
+    private  static ScrollView scrollview;
+    private static RelativeLayout progress;
 
     private final static String MY_URL = "cloudinary://572176942673258:EBwYIz2pGosoqQC7qmgw6jyvt-0@claudy";
 
@@ -48,7 +56,27 @@ public class MainActivity extends ActionBarActivity {
         apiKey = resources.getString(R.string.cloudinary_api_key);
         apiSecret = resources.getString(R.string.cloudinary_api_secret);
 
+        Map config = new HashMap();
+        config.put("cloud_name", cloudName);
+        config.put("api_key", apiKey);
+        config.put("api_secret", apiSecret);
 
+        cloudinary = new Cloudinary(config);
+        activity = this;
+        Button uploadBtn = ((Button) findViewById(R.id.upload_button));
+        scrollview = (ScrollView) findViewById(R.id.content_scrollview);
+        progress = (RelativeLayout) findViewById(R.id.progressLayout);
+        uploadBtn.setVisibility(Button.GONE);
+        uploadBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                scrollview.setVisibility(ScrollView.GONE);
+                progress.setVisibility(RelativeLayout.VISIBLE);
+                uploadImage(view);
+            }
+        });
+
+        ImageServer.getResources(this,cloudinary);
     }
 
     @Override
@@ -66,7 +94,8 @@ public class MainActivity extends ActionBarActivity {
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
+        if (id == R.id.action_all_image) {
+            startActivity(new Intent(this,SavedImageActivity.class));
             return true;
         }
 
@@ -79,19 +108,18 @@ public class MainActivity extends ActionBarActivity {
         startActivityForResult(photoPickerIntent, 1);
     }
 
-    public void uploadImage(View view) {
+    public static void uploadImage(View view) {
         //configure cloudinary secure url
-
+        Log.e("uploading", "upload in progress");
 
         Map config = new HashMap();
         config.put("cloud_name", cloudName);
         config.put("api_key", apiKey);
         config.put("api_secret", apiSecret);
         //cloudinary = new Cloudinary(config);
-        cloudinary = new Cloudinary(MY_URL);
+
 
         //test
-
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         yourSelectedImage.compress(Bitmap.CompressFormat.PNG, 0 /*ignored for PNG*/, bos);
         byte[] bitmapdata = bos.toByteArray();
@@ -109,23 +137,24 @@ public class MainActivity extends ActionBarActivity {
                 try {
 
                     final String filename = "image_" + new Date();
-                    cloudinary.uploader().upload(bs, Cloudinary.asMap("public_id", filename));
+                    cloudinary.uploader().upload(bs, Cloudinary.asMap("public_id", "TestFolder/"+filename));
 
-                    runOnUiThread(new Runnable() {
+
+                    activity.runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
                             String url = cloudinary.url().generate(filename);
                             if (url != null) {
                                 AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(
-                                        getApplicationContext());
+                                        activity);
                                 alertDialogBuilder.setTitle("Image Upload");
 
                                 alertDialogBuilder
-                                        .setMessage("Picture Uploaded! \n"+url)
+                                        .setMessage("Picture Uploaded! \n" + url)
                                         .setCancelable(false).setPositiveButton("OK", new DialogInterface.OnClickListener() {
                                     @Override
                                     public void onClick(DialogInterface dialogInterface, int i) {
-                                        startActivity(new Intent(getApplicationContext(), MainActivity.class));
+                                        activity.startActivity(new Intent(activity.getApplicationContext(), MainActivity.class));
                                     }
                                 }).show();
                             }
@@ -139,10 +168,16 @@ public class MainActivity extends ActionBarActivity {
             }
         };
 
-
         new Thread(runnable).start();
 
 
+    }
+
+    @Override
+    public void onBackPressed() {
+       if (progress.getVisibility() == RelativeLayout.VISIBLE){
+
+       }
     }
 
     @Override
@@ -169,6 +204,7 @@ public class MainActivity extends ActionBarActivity {
                         int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
                         imagePath = cursor.getString(columnIndex);
                         cursor.close();
+                        ((Button) findViewById(R.id.upload_button)).setVisibility(Button.VISIBLE);
 
                     } catch (Exception e) {
 

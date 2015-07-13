@@ -16,9 +16,11 @@
         android:text="@string/cloudianry_header" />
 
     <ScrollView
+        android:id="@+id/content_scrollview"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:fillViewport="true">
+        android:fillViewport="true"
+        android:visibility="visible">
 
 
         <LinearLayout
@@ -27,29 +29,49 @@
             android:orientation="vertical">
 
 
+            <ImageView
 
-        <ImageView
+                android:id="@+id/uploaded_image"
+                android:layout_width="wrap_content"
+                android:layout_height="250dp"
+                android:src="@drawable/flower1" />
 
-            android:id="@+id/uploaded_image"
-            android:layout_width="wrap_content"
-            android:layout_height="250dp"
-            android:src="@drawable/flower1" />
+            <Button
+                android:layout_width="150dp"
+                android:layout_height="50dp"
+                android:onClick="pickImage"
+                android:text="Choose picture" />
 
-        <Button
-            android:layout_width="150dp"
-            android:layout_height="50dp"
-            android:onClick="pickImage"
-            android:text="Choose picture" />
-
-        <Button
-            android:layout_width="150dp"
-            android:layout_height="50dp"
-            android:onClick="uploadImage"
-            android:text="UPLOAD" />
+            <Button
+                android:id="@+id/upload_button"
+                android:layout_width="150dp"
+                android:layout_height="50dp"
+                android:text="UPLOAD" />
 
         </LinearLayout>
 
     </ScrollView>
+
+    <RelativeLayout
+        android:id="@+id/progressLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone">
+
+        <ProgressBar
+            android:id="@+id/progress"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_centerVertical="true" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_below="@+id/progress"
+            android:text="Upload in progress" />
+    </RelativeLayout>
 
 
 </LinearLayout>
